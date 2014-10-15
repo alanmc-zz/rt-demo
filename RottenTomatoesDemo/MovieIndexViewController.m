@@ -10,10 +10,15 @@
 #import "MovieTableViewCell.h"
 #import "MovieDetailViewController.h"
 #import "UIImageView+AFNetworking.h"
+#import "SVProgressHUD.h"
 
 @interface MovieIndexViewController ()
 
-@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (nonatomic, weak) IBOutlet UITableView *tableView;
+@property (nonatomic, strong) UIRefreshControl *refreshControl;
+@property (nonatomic) int currentPage;
+@property (strong) NSMutableArray* movieData;
+@property (weak, nonatomic) IBOutlet UILabel *networkErrorView;
 
 @end
 
@@ -24,24 +29,55 @@
 
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
-    self.tableView.rowHeight = 100;
-    self.title = @"RT";
-    
+    self.title = @"Movies";
+    self.currentPage = 1;
+    self.networkErrorView.hidden = YES;
+
     [self.tableView registerNib:[UINib nibWithNibName:@"MovieTableViewCell" bundle:nil]
-                    forCellReuseIdentifier:@"MovieTableViewCell"];
+         forCellReuseIdentifier:@"MovieTableViewCell"];
+
+    // Configure Refresh Control
+    self.refreshControl = [[UIRefreshControl alloc] init];
+    [self.refreshControl addTarget:self
+                            action:@selector(refresh)
+                  forControlEvents:UIControlEventValueChanged];
+    [self.tableView insertSubview:self.refreshControl atIndex:0];
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:
-                                    [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/dvds/top_rentals.json?apikey=ytw6t5hxujfxnrd7sgtwgjaa"]];
+    self.movieData = [[NSMutableArray alloc] init];
+    [self reloadMovieData];
+}
+
+- (void)reloadMovieData {
+    [SVProgressHUD show];
+    NSString *requestStr = [NSString stringWithFormat:@"http://api.rottentomatoes.com/api/public/v1.0/lists/movies/in_theaters.json?apikey=ytw6t5hxujfxnrd7sgtwgjaa&page=%d", self.currentPage];
+
+    NSURL *requestURL = [NSURL URLWithString:requestStr];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:requestURL
+                                                                cachePolicy:NSURLRequestReturnCacheDataElseLoad
+                                                            timeoutInterval:10.0];
     [NSURLConnection sendAsynchronousRequest:request
                                        queue:[NSOperationQueue mainQueue]
                            completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-                               NSDictionary *JSON = [NSJSONSerialization
+                               [SVProgressHUD dismiss];
+
+                               if (!data) {
+                                   self.networkErrorView.hidden = NO;
+                                   return;
+                               }
+                               self.networkErrorView.hidden = YES;
+
+                               NSDictionary* json = [NSJSONSerialization
                                                      JSONObjectWithData: data
                                                      options: NSJSONReadingMutableContainers
                                                      error: nil];
-                               NSLog(@"%@", JSON);
+                               [self.movieData addObjectsFromArray:json[@"movies"]];
 
+                               [self.tableView reloadData];
                            }];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [self reloadMovieData];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -50,25 +86,44 @@
 }
 
 - (NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    [self.tableView reloadData];
     MovieDetailViewController* dvc = [[MovieDetailViewController alloc] init];
+    dvc.movie = self.movieData[indexPath.row];
     [self.navigationController pushViewController:dvc animated:YES];
     return indexPath;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 100;
+    return self.movieData.count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    MovieTableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"MovieTableViewCell"];
-    cell.synopsisLabel.text = @"Synopsis";
-    cell.titleLabel.text = @"Movie Title";
+    NSDictionary* movie = self.movieData[indexPath.row];
 
-    UIImageView *iv = [[UIImageView alloc] init];
-    [iv setImageWithURL:[NSURL URLWithString:@"https://pbs.twimg.com/profile_images/464460229300600832/esZd6eQp.jpeg"]];
-    cell.posterImage = iv;
+    MovieTableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"MovieTableViewCell"];
+    cell.synopsisLabel.text = movie[@"synopsis"];
+    cell.titleLabel.text = movie[@"title"];
+    [cell.posterImage setImageWithURL:[NSURL URLWithString: movie[@"posters"][@"thumbnail"]]];
+    cell.posterImage.contentMode = UIViewContentModeScaleAspectFill;
+    cell.posterImage.clipsToBounds=YES;
+
+    if (indexPath.row == self.movieData.count - 1) {
+        [self loadNextPage];
+    }
+    
     return cell;
+}
+
+
+- (void)refresh {
+    self.movieData = [[NSMutableArray alloc] init];
+    self.currentPage = 1;
+    [self reloadMovieData];
+    [self.refreshControl endRefreshing];
+}
+
+- (void)loadNextPage {
+    self.currentPage++;
+    [self reloadMovieData];
 }
 
 @end

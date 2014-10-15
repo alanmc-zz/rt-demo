@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface MovieDetailViewController : UIViewController
+@interface MovieDetailViewController : UIViewController <UIGestureRecognizerDelegate>
 
+@property(weak, nonatomic) NSDictionary *movie;
 @end
