@@ -30,5 +30,9 @@ Time spent: `8 hours`
 Credits
 ---------
 * [Rotten Tomatoes API](http://developer.rottentomatoes.com/docs/read/JSON)
+<<<<<<< HEAD
 * [AFNetworking](https://github.com/AFNetworking/AFNetworking)
 * [SVProgressHUD](https://github.com/TransitApp/SVProgressHUD)
+=======
+* [AFNetworking](https://github.com/AFNetworking/AFNetworking)
+>>>>>>> 92d51641b685ed28508db14fb071fdf5b315b082
