@@ -25,14 +25,10 @@ Time spent: `8 hours`
 - [ ] Add a search bar: pretty simple implementation of searching against the existing table view data.
 
 ### Walkthrough
-![Video Walkthrough](http://imgur.com/67q6Mnm)
+![Video Walkthrough](http://i.imgur.com/67q6Mnm.gif)
 
 Credits
 ---------
 * [Rotten Tomatoes API](http://developer.rottentomatoes.com/docs/read/JSON)
-<<<<<<< HEAD
 * [AFNetworking](https://github.com/AFNetworking/AFNetworking)
 * [SVProgressHUD](https://github.com/TransitApp/SVProgressHUD)
-=======
-* [AFNetworking](https://github.com/AFNetworking/AFNetworking)
->>>>>>> 92d51641b685ed28508db14fb071fdf5b315b082
